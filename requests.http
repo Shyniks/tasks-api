@@ -1,0 +1,82 @@
+### Файл для розширення VSCode "REST Client" (humao.rest-client).
+### Встанови розширення -> над кожним запитом з'явиться посилання
+### "Send Request" -> клік -> відповідь відкриється у сусідній панелі.
+###
+### @base — змінна, щоб не дублювати адресу в кожному запиті.
+@base = http://127.0.0.1:8080
+
+### Healthcheck — має повернути {"status": "ok"}
+GET {{base}}/health
+
+
+### Список усіх задач (спочатку порожній масив [])
+GET {{base}}/tasks
+
+
+### Створити задачу №1
+POST {{base}}/tasks
+Content-Type: application/json
+
+{
+  "title": "Купити молоко"
+}
+
+
+### Створити задачу №2 (з явним done)
+POST {{base}}/tasks
+Content-Type: application/json
+
+{
+  "title": "Помити посуд",
+  "done": true
+}
+
+
+### Отримати задачу за id
+GET {{base}}/tasks/1
+
+
+### Оновити задачу — тільки title
+PUT {{base}}/tasks/1
+Content-Type: application/json
+
+{
+  "title": "Купити молоко та хліб"
+}
+
+
+### Оновити задачу — тільки done
+PUT {{base}}/tasks/1
+Content-Type: application/json
+
+{
+  "done": true
+}
+
+
+### Видалити задачу
+DELETE {{base}}/tasks/1
+
+
+### --- Перевірка обробки помилок ---
+
+### 404 — задачі з таким id не існує
+GET {{base}}/tasks/999
+
+
+### 400 — POST без обов'язкового title
+POST {{base}}/tasks
+Content-Type: application/json
+
+{
+  "done": false
+}
+
+
+### 400 — PUT з порожнім title
+PUT {{base}}/tasks/1
+Content-Type: application/json
+
+{
+  "title": ""
+}

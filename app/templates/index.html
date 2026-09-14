@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Задачі</title>
+<style>
+  /* Мінімальний, охайний стиль — без фреймворків, звичайний CSS. */
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #f4f5f7;
+    color: #1f2933;
+    margin: 0;
+    padding: 40px 16px;
+  }
+
+  .container {
+    max-width: 480px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    padding: 24px;
+  }
+
+  h1 {
+    margin: 0 0 20px;
+    font-size: 22px;
+  }
+
+  /* Форма додавання нової задачі: поле вводу + кнопка в один рядок. */
+  #add-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  #title-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+
+  #title-input:focus {
+    outline: none;
+    border-color: #4f46e5;
+  }
+
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    padding: 10px 16px;
+  }
+
+  #add-form button {
+    background: #4f46e5;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  #add-form button:hover {
+    background: #4338ca;
+  }
+
+  ul#task-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  li.task {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid #eef0f2;
+  }
+
+  li.task:last-child {
+    border-bottom: none;
+  }
+
+  li.task input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  li.task .title {
+    flex: 1;
+    word-break: break-word;
+  }
+
+  /* Виконана задача — закреслений сірий текст. */
+  li.task.done .title {
+    text-decoration: line-through;
+    color: #9aa1a9;
+  }
+
+  .delete-btn {
+    background: #fee2e2;
+    color: #b91c1c;
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  .delete-btn:hover {
+    background: #fecaca;
+  }
+
+  #empty-message {
+    color: #9aa1a9;
+    text-align: center;
+    padding: 16px 0;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Мої задачі</h1>
+
+    <!-- Форма додавання задачі. submit перехоплюємо в JS, щоб сторінка
+         не перезавантажувалась (звичайна поведінка HTML-форми). -->
+    <form id="add-form">
+      <input type="text" id="title-input" placeholder="Нова задача..." autocomplete="off" required>
+      <button type="submit">Додати</button>
+    </form>
+
+    <!-- Сюди JavaScript вставить <li> для кожної задачі. -->
+    <ul id="task-list"></ul>
+    <p id="empty-message" hidden>Задач ще немає.</p>
+  </div>
+
+  <script>
+    // Ця сторінка не має власного стану задач — вона щоразу питає
+    // актуальний список у Flask API (GET /tasks) і перемальовує його.
+    // Це найпростіша модель: "змінили щось -> перезапитали весь список".
+
+    const taskList = document.getElementById('task-list');
+    const emptyMessage = document.getElementById('empty-message');
+    const addForm = document.getElementById('add-form');
+    const titleInput = document.getElementById('title-input');
+
+    // Завантажити список задач з API і намалювати його на сторінці.
+    async function loadTasks() {
+      const response = await fetch('/tasks');
+      const tasks = await response.json();
+      renderTasks(tasks);
+    }
+
+    // Побудувати <li> для кожної задачі та вставити у <ul id="task-list">.
+    function renderTasks(tasks) {
+      taskList.innerHTML = '';
+      emptyMessage.hidden = tasks.length !== 0;
+
+      for (const task of tasks) {
+        const li = document.createElement('li');
+        li.className = 'task' + (task.done ? ' done' : '');
+
+        // Чекбокс "виконано" — при зміні одразу шле PUT на сервер.
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = task.done;
+        checkbox.addEventListener('change', () => toggleDone(task.id, checkbox.checked));
+
+        // Текст задачі.
+        const title = document.createElement('span');
+        title.className = 'title';
+        title.textContent = task.title;
+
+        // Кнопка видалення.
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = 'Видалити';
+        deleteBtn.addEventListener('click', () => deleteTask(task.id));
+
+        li.append(checkbox, title, deleteBtn);
+        taskList.append(li);
+      }
+    }
+
+    // Створити нову задачу через POST /tasks.
+    async function addTask(title) {
+      await fetch('/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+      });
+      await loadTasks();
+    }
+
+    // Оновити поле done існуючої задачі через PUT /tasks/<id>.
+    async function toggleDone(id, done) {
+      await fetch(`/tasks/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ done }),
+      });
+      await loadTasks();
+    }
+
+    // Видалити задачу через DELETE /tasks/<id>.
+    async function deleteTask(id) {
+      await fetch(`/tasks/${id}`, { method: 'DELETE' });
+      await loadTasks();
+    }
+
+    // Обробка відправки форми додавання: не перезавантажуємо сторінку,
+    // а самі викликаємо addTask() і чистимо поле вводу.
+    addForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const title = titleInput.value.trim();
+      if (!title) {
+        return;
+      }
+      titleInput.value = '';
+      addTask(title);
+    });
+
+    // Перше завантаження списку одразу після відкриття сторінки.
+    loadTasks();
+  </script>
+</body>
+</html>

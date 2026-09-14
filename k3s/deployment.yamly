@@ -1,0 +1,49 @@
+apin: apps/v1
+kind: Deployment
+metadata:
+  name: task-api-deployment
+  labels:
+    app: my-k3s-aplication
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: task-api-deployment
+  template:
+    metadata:
+      labels:
+        app: my-k3s-aplication
+ spec:
+     containers:
+       - name: task-api-containers
+         image: task-api:1.0
+          ports:
+           - containerPort: 80
+apiVersio
+      app: tasks-api
+  template:
+    metadata:apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tasks-api-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tasks-api
+  template:
+    metadata:
+      labels:
+        app: tasks-api
+    spec:
+      containers:
+        - name: tasks-api-container
+          image: yuriiskomarovskiy/tasks-api:1.0
+          ports:
+            - containerPort: 8080
+      labels:
+        app: tasks-api
+    spec:
+      containers:
+        - name: tasks-api-container
+          image: yuriisk
