@@ -1,0 +1,7 @@
+ansible/inventory.yml
+*.pem
+*.key
+.env
+__pycache__/
+*.pyc
+.venv/
