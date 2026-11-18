@@ -1,5 +1,5 @@
 ---
-# Локальний запуск ролі k3s_install (playbook.yml таргетить yuriy_server — не чіпаємо його)
+# Локальний запуск ролі k3s_install (playbook.yml таргетить tasks_server — не чіпаємо його)
 - name: Install k3s locally via role
   hosts: localhost
   connection: local
