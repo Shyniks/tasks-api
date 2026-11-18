@@ -1,7 +1,7 @@
 ---
 
 - name: Install k3s via role
-  hosts: yuriy_server
+  hosts: tasks_server
   become: yes
   roles:
     - k3s_install
